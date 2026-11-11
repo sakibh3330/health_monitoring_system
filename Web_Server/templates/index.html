@@ -1,0 +1,56 @@
+<!DOCTYPE HTML><html>
+<head>
+  <title>Health Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f4f7f6; margin: 0; }
+    h2 { color: #333; margin: 20px 0; }
+    .container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; }
+    .gauge-wrapper { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); text-align: center; min-width: 220px; }
+    .gauge { position: relative; width: 200px; height: 100px; overflow: hidden; margin: 0 auto; }
+    .gauge-bg { position: absolute; width: 200px; height: 200px; border-radius: 50%; border: 20px solid #eee; box-sizing: border-box; }
+    .needle { position: absolute; bottom: 0; left: 50%; width: 4px; height: 80px; background: #333; transform-origin: bottom center; transform: rotate(-90deg); transition: transform 0.8s ease; border-radius: 4px; }
+    .label { font-size: 24px; font-weight: bold; margin-top: 10px; display: block; }
+    .unit { color: #777; font-size: 14px; }
+    #hr-needle { background: #e74c3c; }
+    #spo2-needle { background: #3498db; }
+    #stress-needle { background: #f39c12; }
+  </style>
+</head>
+<body>
+  <h2>Biometric Dashboard</h2>
+  <div class="container">
+    <div class="gauge-wrapper">
+      <div class="gauge"><div class="gauge-bg"></div><div class="needle" id="hr-needle"></div></div>
+      <span class="label" id="hr-val">0</span><span class="unit">BPM (Heart Rate)</span>
+    </div>
+    <div class="gauge-wrapper">
+      <div class="gauge"><div class="gauge-bg"></div><div class="needle" id="spo2-needle"></div></div>
+      <span class="label" id="spo2-val">0</span><span class="unit">% (Oxygen)</span>
+    </div>
+    <div class="gauge-wrapper">
+      <div class="gauge"><div class="gauge-bg"></div><div class="needle" id="stress-needle"></div></div>
+      <span class="label" id="stress-val">0</span><span class="unit">% (Stress Delta)</span>
+    </div>
+  </div>
+  <script>
+    function update() {
+      fetch('/data').then(res => res.json()).then(data => {
+        // Heart Rate Gauge
+        document.getElementById('hr-needle').style.transform = `rotate(${(data.hr/200)*180-90}deg)`;
+        document.getElementById('hr-val').innerText = Math.round(data.hr);
+        
+        // SpO2 Gauge
+        let sDeg = ((data.spo2-70)/30)*180-90;
+        document.getElementById('spo2-needle').style.transform = `rotate(${Math.max(-90, sDeg)}deg)`;
+        document.getElementById('spo2-val').innerText = Math.round(data.spo2);
+        
+        // Stress % Gauge (Maps -100% to +100% onto the half-circle)
+        let tDeg = ((data.stress + 100)/200)*180-90;
+        document.getElementById('stress-needle').style.transform = `rotate(${Math.min(90, Math.max(-90, tDeg))}deg)`;
+        document.getElementById('stress-val').innerText = Math.round(data.stress);
+      });
+    }
+    setInterval(update, 1000);
+  </script>
+</body></html>
